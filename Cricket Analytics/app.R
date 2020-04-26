@@ -6,6 +6,8 @@ library(lubridate)
 library(stringi)
 library(patchwork)
 library(gganimate)
+library(gifski)
+library(png)
 
 
 ui <- navbarPage("Cricket Analytics",
