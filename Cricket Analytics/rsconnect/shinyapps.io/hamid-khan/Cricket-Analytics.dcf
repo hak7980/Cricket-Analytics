@@ -1,0 +1,12 @@
+name: Cricket-Analytics
+title: Cricket-Analytics
+username:
+account: hamid-khan
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2189581
+bundleId: 3067966
+url: https://hamid-khan.shinyapps.io/Cricket-Analytics/
+when: 1587924782.26065
+asMultiple: FALSE
+asStatic: FALSE
