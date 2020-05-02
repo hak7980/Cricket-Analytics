@@ -8,40 +8,58 @@ library(lubridate)
 library(stringi)
 library(patchwork)
 library(gganimate)
+library(lavaan)
+library(gt)
+library(gtsummary)
+library(skimr)
 
-
-?save
 
 ### Getting the dataset ready
 
 # Loading dataset
 load("raw-data/odimetadata.Rdata")
 
-#Adding year and over variables
+#Adding year, over and wicket variables
 subset <- 
   results %>%
   mutate(year = year(as.Date(
     date, format = "%m/%d/%Y"))) %>%
   mutate(over = stri_extract(ball, regex = "[.](.*)")) %>%
   mutate(over = substring(over, 2)) %>%
-  mutate(over = gsub("\\..*","", over)) 
+  mutate(over = gsub("\\..*","", over))
+  
 
 # Wrangling the data-set to include columns for each phase of the game
 data <- subset %>% 
   na.omit(totalRuns) %>%
-  mutate(phase = case_when(
+  group_by(column_label, team) %>%
+  mutate(bat_pos = match(batsman, unique(batsman))) %>%
+  ungroup() %>%
+  group_by(bat_pos, column_label, team) %>%
+  mutate(pos_runs = sum(totalRuns)) %>%
+  mutate(wicket = if_else(wicketPlayerOut=="nobody",0,1),
+    phase = case_when(
     over %in% 0:10 ~ "First Ten",
     over %in% 11:20  ~ "Middle One",
     over %in% 21:30 ~ "Middle Two",
     over %in% 31:40 ~ "Middle Three",
-    over %in% 41:50 ~ "Last Ten")) %>%
+    over %in% 41:50 ~ "Last Ten"),
+    pp_rule = if_else(date>=2015-06-26,1,0),
+    nb_rule = if_else(date>=2011-09-29,1,0),
+    bo_rule = if_else(date>=2012-10-30,1,0),
+    bt_rule = if_else(date>=2017-09-28,1,0)) %>%
 
 #Adding in the columns for the number of runs scored in each phase in 25-run increments
+  group_by(column_label, team) %>%
+  mutate(inning_runs = sum(totalRuns),
+         inning_wickets = sum(wicket)) %>%
+  ungroup() %>%
   group_by(phase, column_label) %>%
-  mutate(phase_runs = sum(totalRuns)) %>%
+  mutate(phase_runs = sum(totalRuns),
+         phase_wickets = sum(wicket)) %>%
   ungroup() %>%
   mutate(bracket = case_when(
-    phase_runs %in% 0:25 ~ "Less than 25 runs",
+    phase_runs %in% 0:25 ~ "0 to 25 runs",
     phase_runs %in% 25:50 ~ "25 to 50 runs",
     phase_runs %in% 50:75  ~ "50 to 75 runs",
     phase_runs %in% 75:100 ~ "75 to 100 runs",
@@ -52,8 +70,12 @@ data <- subset %>%
   mutate(average_runs = mean(phase_runs)) %>%
   ungroup()
 
+# Making summary stats table
+x <- data %>% gtsummary(pos_runs, inning_runs, inning_wickets, phase_runs)
+
 save(data, file = "cricket_analytics/data/data.RData")
 
+?gtsummary
 
 # Making plot of the proportion of matches won by Pakistan within each run bracket sorted
 # accordingto the year the match was played 
@@ -68,62 +90,39 @@ datapk <-
   mutate(prop_won = sum(win)/n()) %>%
   ungroup()
     
-# Making the first plot
+# Making the first plot, by first calculating win-percentage
 
 p1 <- 
-  datapk %>%
-  filter(phase=="First Ten") %>%
-  ggplot() +
-  geom_point(aes(x = factor(year), 
-                 group = factor(bracket), 
-                 color = factor(bracket), y = prop_won), 
-             size=2) +
+data %>%
+  filter(team=="Pakistan") %>%
+  group_by(bracket, year) %>%
+  mutate(win = ifelse(winner=="Pakistan",1,0)) %>%
+  mutate(prop_won = sum(win)/n()) %>%
+  ungroup() %>%
+  filter(year == 2017) %>%
+  ggplot(aes(prop_won, average_runs)) +
+  geom_col() +
   labs(title = 
-         "Proportion of Matches won by Pakistan Sorted by Runs Scored in the \n First Five Overs", 
-       subtitle = "Sorted According to Run Bracket - Period: 2010-2017",
-       x = "Year", 
-       y = "Proportion Won",
-       col = "Runs Scored Bracket") +
+         "Average Runs Scored by Batsman", 
+       subtitle = "Period: 2010-2017",
+       x = "Batting Position", 
+       y = "Average Runs in the Year") +
   labs(caption = "Source: cricsheet.org") +
   theme_classic()+ 
   theme(legend.position = "right",
         axis.text.x = element_text(angle = 45, hjust = 1))
   
-# Making the second plot of the proportion of matches won by Pakistan 
-# within each run bracket sorted according to the year the match was played 
+# Making the second plot that shows how run-scoring has evolved over time
 
-p2 <- 
-  datapk %>%
-  filter(phase=="Last Ten") %>%
-  ggplot() +
-  geom_point(aes(x = factor(year), 
-                 group = factor(bracket), 
-                 color = factor(bracket), y = prop_won), 
-             size=2) +
-  labs(title = 
-         "Proportion of Matches won by Pakistan Sorted by Runs Scored in the \n Last Five Overs", 
-       subtitle = "Sorted According to Run Bracket - Period: 2010-2017",
-       x = "Year", 
-       y = "Proportion Won",
-       col = "Runs Scored Bracket") +
-  labs(caption = "Source: cricsheet.org") +
-  theme_classic()+ 
-  theme(legend.position = "right",
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-# Making the third plot that shows how run-scoring has evolved over time
-
-p3 <- data %>%
-  group_by(year, phase) %>%
-  summarize(average_runs = mean(average_runs)) %>%
+p2 <- data %>%
+  group_by(year) %>%
+  summarize(inning_runs = mean(inning_runs)) %>%
+  ungroup() %>%
   ggplot(aes(x = factor(year), 
-             y = average_runs,
-             group=phase,
-             color=phase)) +
-  geom_line() +
+             y = inning_runs)) +
+  geom_point() +
   labs(title = 
-         "Runs Scored in Each Phase", 
+         "Average Runs Scored in Innings over Time", 
        subtitle = "Period: 2010-2017",
        x = "Year", 
        y = "Average Runs",
@@ -131,7 +130,29 @@ p3 <- data %>%
   labs(caption = "Source: cricsheet.org") +
   theme_classic()+ 
   theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+# Third plot: runs by batting position in each year
+
+p3 <- 
+  data %>%
+  group_by(year, bat_pos) %>%
+  summarize(pos_runs = mean(pos_runs)) %>%
+  ungroup() %>%
+  filter(year == 2017) %>%
+  ggplot(aes(bat_pos, pos_runs)) +
+  geom_col() +
+  labs(title = 
+         "Average Runs Scored by Batsman", 
+       subtitle = "Period: 2010-2017",
+       x = "Batting Position", 
+       y = "Average Runs in the Year") +
+  labs(caption = "Source: cricsheet.org") +
+  theme_classic()+ 
+  theme(legend.position = "right",
         axis.text.x = element_text(angle = 45, hjust = 1))
+
+
 
 
 

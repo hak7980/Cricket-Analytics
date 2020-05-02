@@ -5,8 +5,8 @@ account: hamid-khan
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2189581
-bundleId: 3068075
+bundleId: 3093905
 url: https://hamid-khan.shinyapps.io/Cricket-Analytics/
-when: 1587926821.70776
+when: 1588433504.14842
 asMultiple: FALSE
 asStatic: FALSE
