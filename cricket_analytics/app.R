@@ -35,14 +35,12 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                  tabPanel("About the Project",
                           tabsetPanel(
                             tabPanel("What is Cricket?",
-                                     fluidRow(div(img(src='ground.png'), style="text-align: center;"),
-                                              p("Picture of the MCC in Melbourne, Australia. The world's largest cricket ground in terms of seating capacity", align="center" )),
+                                     br(),
                                      p("Cricket is a bat and ball game played most commonly played in the 
                           commonwealth countries. It is played between two teams, each consisting of eleven players.
                             First played in the early 16th century, the game is the second most popular sport in the world in terms of viewership. The bulk
                             of the sport's followers are in the commonwealth countries."),
-                                     br(),
-                                     p("This video below gives a brief overview of cricket:"),
+                                     p("The video below gives a brief overview of cricket:"),
                                      HTML('<center><iframe width="740" height="380" src="https://www.youtube.com/embed/g-beFHld19c" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></br>')),
                             tabPanel("Rules of ODI Cricket",
                                      h3("Brief Overview"),
@@ -88,7 +86,7 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                             
                             tabPanel("Project Overview",
                                      br(),
-
+                                      h4("Rule Changes"),    
                                      p("Since 2006, ODI Cricket has changed drastically and
                                         the rate of run-scoring has increased substantially.
                                         For instance, the records for the highest ODI total, 
@@ -96,12 +94,46 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                         and numerous other batting records have been broke. 
                                         Experts have suggested that these changes are 
                                          the result of a number of a number of changes that were
-                                         instituted following 2011.
-                                                                  
-                                        The purpose of this project, therefore, is to
-                                        examine whether that is true. To do so, it looks at the 
-                                        when drastic changes in the run-scoring have occured 
-                                        and whether the changes are in-line with what was 
+                                         instituted following 2011."),
+                                     p("While there have been numerous changes to ODI cricket in the past decade, 
+                                       the following are some of the most important:"),
+                                     HTML("<ul><li><b>Two new-ball rule:</b> on 09/29/2011, there was a 
+                                     rule that made it mandatory to use two separate new balls by 
+                                     each of the starting bowlers at the start of each ODI innings.
+                                     Previously, there was only one ball and this rule was thought to
+                                     favor the batsmen as it made reverse-swing, a useful asset
+                                     for fast-bowlers made possible by an older cricket ball, 
+                                     an unlikely proposition.</li>
+                                          <li><b>Bouncer rule:</b> on 10/30/2012, there was a 
+                                     rule that increased the limit of bouncers allowed in one 
+                                     over from 1 to 2. A two-run penalty, imposed if the bowler 
+                                     exceeded this limit was also removed and the rule was thought
+                                     to have benefitted the bowlers by giving them more freedom 
+                                     in their bowling choices.</li>
+                                          <li><b>Powerplay rule:</b> on 06/26/2015, there was a 
+                                     change to the rules pertaining to the fieling restrictions in 
+                                     ODI cricket, known as powerplays. In a powerplay, there are only
+                                     a certain number of fielders allowed within the inner-portion
+                                     of a cricket field. Before this rule, there were only 5 fielders
+                                     allowed outside the inner-ring in the last ten overs of the game
+                                     which made it easier for batsmen to hit boundaries. However, this
+                                     batting powerplay was removed in 2015, in an effort to help the 
+                                     bowlers.</li>
+                                          <li>Bat-thickness rule:</b> on 09/28/2017, there was a 
+                                     limiitation imposed on the maximum thickness of a cricket bat. 
+                                     The rule change was instituted in the face of mounting criticism
+                                     with regards to the increasing thickness of the size of batsmen's
+                                     bats. Thicker bats made it easier to put more power on the ball and
+                                     facilitated the scoring of boundaries. This rule change was meant 
+                                     to limit the impacts of bat thickness and, on the whole, favored
+                                     the bowlers.</li></ul>"),
+                                     h4("Purpose"),                          
+                                        p("The purpose of this project, therefore, is to
+                                        examine whether these rules changes have had 
+                                        a substantial impact on outcomes in cricket.
+                                        To do so, it looks at both visual and quantitative evidence
+                                        to see whether any drastic changes in run-scoring or 
+                                        wicket taking have occured, in line with what was 
                                         predicted by experts. Taking the analysis a step further
                                         the project further looks at whether these changes have
                                         had a substantial impact on the way that ODI games
@@ -145,13 +177,20 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                  
                  tabPanel("Visualizations",
                           h4("The Evoloution of ODI Cricket"),
+                          p("These panels will show how ODI cricket has evolved
+                            over the past few years. The two main variables that
+                            determine the outcomes of a cricket match are the runs
+                            that are scored by the batsmen and the wickets taken
+                            by the bowlers. Therefore, the following few plots show
+                            how these two key variables have changed for several
+                            cricket teams over time."),
                           tabsetPanel(
                             tabPanel("Overall Trends",
                                      h4("Evoloution of Run Scoring over Time"),
                                      plotOutput("plot"),
-                                     p("The graph above shows the trends in run-scoring between 2006-2020."),
+                                     p("The graph above shows the trends in run-scoring between 2006-2017."),
                                      plotOutput("plot2"),
-                                     p("The graph above shows the trends in wicket-taking between 2006-2020.")
+                                     p("The graph above shows the trends in wicket-taking between 2006-2017.")
                             ),
                             tabPanel("Runs Scored in Phase",
                                      selectInput("countryInput3", "Country",
@@ -160,7 +199,11 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                      sidebarPanel(width=12, 
                                        sliderInput("yearInput3",
                                                    label = "Year:",
-                                                   min = 2006, max = 2017,value=2006, sep="",ticks=FALSE))),
+                                                   min = 2006, max = 2017,value=2006, sep="",ticks=FALSE)),
+                                     p("This plot shows how the number of runs scored by
+                                      a team in each phase (10-over chunk) has
+                                       changed over time. The data can be viewed at the
+                                       country level.")),
                             
                             tabPanel("Runs Scored by Position",
                                      selectInput("countryInput4", "Country",
@@ -169,7 +212,11 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                      sidebarPanel(width=12,
                                        sliderInput("yearInput4", 
                                                    label = "Year:",
-                                                   min = 2006, max = 2017,value=2006,sep="", ticks=FALSE))),
+                                                   min = 2006, max = 2017,value=2006,sep="", ticks=FALSE)),
+                                     p("This plot shows how the runs scored by
+                                       batsmen batting at a particular position have
+                                       changed over time. The data can be viewed at the
+                                       country level.")),
                             
                             tabPanel("Wickets Lost in Phase",
                                      selectInput("countryInput5", "Country",
@@ -178,7 +225,11 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                      sidebarPanel(width=12, 
                                                   sliderInput("yearInput5",
                                                               label = "Year:",
-                                                              min = 2006, max = 2017,value=2006, sep="",ticks=FALSE))),
+                                                              min = 2006, max = 2017,value=2006, sep="",ticks=FALSE)),
+                                     p("This plot shows how the number of wickets lost by
+                                      a team in each phase (10-over chunk) has
+                                       changed over time. The data can be viewed at the
+                                       country level.")),
                             
                             tabPanel("Wickets Taken by Position",
                                      selectInput("countryInput6", "Country",
@@ -187,7 +238,11 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                      sidebarPanel(width=12,
                                                   sliderInput("yearInput6", 
                                                               label = "Year:",
-                                                              min = 2006, max = 2017,value=2006,sep="", ticks=FALSE)))
+                                                              min = 2006, max = 2017,value=2006,sep="", ticks=FALSE)),
+                                     p("This plot shows how the number of wickets taken
+                                       by a bowler bowling at a particular position has
+                                       changed over time. The data can be viewed at the
+                                       country level."))
                             
                             
                           )),
@@ -220,8 +275,11 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                             cricket, a sport that is an important part of my life."),
                           
                           h3("About Me"),
-                          p("My name is Hamid Khan and I am currently a Junior at Harvard College studying Economics with a minor in Statistics. 
-                            You can reach me at hamidkhan@college.harvard.edu for any questions about this project.")))
+                          HTML(paste("My name is Hamid Khan and I am currently a Junior at Harvard College studying Economics with a minor in Statistics. 
+                            You can reach me at hamidkhan@college.harvard.edu for any questions about this project. The github
+                            repository for this project can be found",
+                               tags$a(href="https://github.com/hak7980/Cricket-Analytics", "here.")))
+                          ))
  
 # Detailed comments on the code for the plots can
 # be found in the plot_code Rscript file in the repo
