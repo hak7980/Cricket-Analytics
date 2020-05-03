@@ -6,12 +6,13 @@ library(janitor)
 library(stringr)
 library(lubridate)
 library(stringi)
+library(infer)
+library(purr)
 library(patchwork)
-library(gganimate)
-library(lavaan)
+library(haven)
 library(gt)
-library(gtsummary)
 library(skimr)
+library(broom)
 
 
 ### Getting the dataset ready
@@ -29,14 +30,19 @@ subset <-
   mutate(over = gsub("\\..*","", over))
   
 
-# Wrangling the data-set to include columns for each phase of the game
+# Wrangling the data-set to include columns for each phase
+# of the game and for total runs scored in the phase,
+# total wickets taken and variable indicating the position
+# of bowlers and batsmen 
 data <- subset %>% 
   na.omit(totalRuns) %>%
   group_by(column_label, team) %>%
-  mutate(bat_pos = match(batsman, unique(batsman))) %>%
+  mutate(bat_pos = match(batsman, unique(batsman)),
+         bow_pos = match(bowler, unique(bowler))) %>%
   ungroup() %>%
   group_by(bat_pos, column_label, team) %>%
   mutate(pos_runs = sum(totalRuns)) %>%
+  ungroup() %>%
   mutate(wicket = if_else(wicketPlayerOut=="nobody",0,1),
     phase = case_when(
     over %in% 0:10 ~ "First Ten",
@@ -44,10 +50,13 @@ data <- subset %>%
     over %in% 21:30 ~ "Middle Two",
     over %in% 31:40 ~ "Middle Three",
     over %in% 41:50 ~ "Last Ten"),
-    pp_rule = if_else(date>=2015-06-26,1,0),
-    nb_rule = if_else(date>=2011-09-29,1,0),
-    bo_rule = if_else(date>=2012-10-30,1,0),
-    bt_rule = if_else(date>=2017-09-28,1,0)) %>%
+    pp_rule = if_else(date>=as.Date("06/26/2015", format = "%M/%d/%Y"),1,0),
+    nb_rule = if_else(date>=as.Date("09/29/2011", format = "%M/%d/%Y"),1,0),
+    bo_rule = if_else(date>=as.Date("10/30/2012", format = "%M/%d/%Y"),1,0),
+    bt_rule = if_else(date>=as.Date("09/28/2017", format = "%M/%d/%Y"),1,0)) %>%
+    group_by(bow_pos, column_label, team) %>%
+    mutate(pos_wickets = sum(wicket)) %>%
+    ungroup() %>%
 
 #Adding in the columns for the number of runs scored in each phase in 25-run increments
   group_by(column_label, team) %>%
@@ -92,31 +101,12 @@ datapk <-
   mutate(prop_won = sum(win)/n()) %>%
   ungroup()
     
-# Making the first plot, by first calculating win-percentage
-
-p1 <- 
-data %>%
-  filter(team=="Pakistan") %>%
-  group_by(bracket, year) %>%
-  mutate(win = ifelse(winner=="Pakistan",1,0)) %>%
-  mutate(prop_won = sum(win)/n()) %>%
-  ungroup() %>%
-  filter(year == 2017) %>%
-  ggplot(aes(prop_won, average_runs)) +
-  geom_col() +
-  labs(title = 
-         "Average Runs Scored by Batsman", 
-       subtitle = "Period: 2010-2017",
-       x = "Batting Position", 
-       y = "Average Runs in the Year") +
-  labs(caption = "Source: cricsheet.org") +
-  theme_classic()+ 
-  theme(legend.position = "right",
-        axis.text.x = element_text(angle = 45, hjust = 1))
   
-# Making the second plot that shows how run-scoring has evolved over time
+# Making a plot that shows how run-scoring has evolved 
+# over time. Created a variable by year of the mean inning
+# runs in a year
 
-p2 <- data %>%
+p1 <- data %>%
   group_by(year) %>%
   summarize(inning_runs = mean(inning_runs)) %>%
   ungroup() %>%
@@ -134,7 +124,33 @@ p2 <- data %>%
   theme(legend.position = "right",
         axis.text.x = element_text(angle = 45, hjust = 1)) 
 
+# Making a plot that shows how wicket-taking has evolved 
+# over time. Created a variable by year of the mean wickets
+# taken a year
+
+p2 <- 
+  
+  data %>%
+  group_by(year) %>%
+  summarize(inning_wickets = mean(inning_wickets)) %>%
+  ungroup() %>%
+  ggplot(aes(x = factor(year), 
+             y = inning_wickets)) +
+  geom_point() +
+  labs(title = 
+         "Average Wickets Taken in Innings over Time", 
+       subtitle = "Period: 2010-2017",
+       x = "Year", 
+       y = "Average Runs",
+       col = "Innings Phase") +
+  labs(caption = "Source: cricsheet.org") +
+  theme_classic()+ 
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45, hjust = 1)) 
+
 # Third plot: runs by batting position in each year
+# Created variable of mean runs by batting position
+# for each year
 
 p3 <- 
   data %>%
@@ -154,15 +170,12 @@ p3 <-
   theme(legend.position = "right",
         axis.text.x = element_text(angle = 45, hjust = 1))
 
-p4 <- data %>%
-  filter(phase=="First Ten") %>%
-  mutate(win = ifelse(winner=="Pakistan",1,0)) %>%
-  mutate(prop_won = sum(win)/n()) %>%
-  ggplot(aes(x = average_runs, y = prop_won)) +
-  geom_point() +
-  stat_smooth()
 
-p5 <- 
+# Histogram for runs in a phase created by first
+# making a variable for the mean runs in 
+# phase for each year
+
+p4 <-
 data %>%
   group_by(year, bat_pos) %>%
   summarize(phase_runs = mean(phase_runs)) %>%
@@ -180,7 +193,64 @@ data %>%
   theme(legend.position = "right",
         axis.text.x = element_text(angle = 45, hjust = 1))
 
+# Histogram for wickets in a phase created by first
+# making a variable for the mean wickets in 
+# phase for each year
+
+p5 <- 
+  data %>%
+  filter(team == "Pakistan") %>%
+  group_by(year, phase) %>%
+  summarize(phase_wickets = mean(phase_wickets)) %>%
+  ungroup() %>%
+  filter(year == 2017) %>%
+  ggplot(aes(phase, phase_runs)) +
+  geom_col() +
+  labs(title = 
+         "Average Wickets Taken in a Phase", 
+       subtitle = "Period: 2010-2017",
+       x = "Phase", 
+       y = "Average Wickets Taken") +
+  labs(caption = "Source: cricsheet.org") +
+  theme_classic()+ 
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45, hjust = 1))
 
 
+# Histogram for wickets in a inning created by first
+# making a variable for the mean wickets in 
+# phase for each year
+
+p6 <- 
+  data %>%
+  filter(team == "Pakistan") %>%
+  group_by(bow_pos, year) %>%
+  summarize(inning_wickets = mean(pos_wickets)) %>%
+  ungroup() %>%
+  filter(year == 2017) %>%
+  ggplot(aes(bow_pos, pos_wickets)) +
+  geom_col() +
+  labs(title = 
+         "Average Wickets Taken", 
+       subtitle = "Period: 2010-2017",
+       x = "Bowler Position", 
+       y = "Average Wickets Taken") +
+  labs(caption = "Source: cricsheet.org") +
+  theme_classic()+ 
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Code to make regression table
+
+regtable <- data %>%
+  lm(inning_runs ~ bt_rule, data = .) %>%
+  tidy(conf.int=TRUE) %>% 
+  select(Variable = term,
+         Estimate = estimate,
+         `Lower Bound` = conf.low,
+         `Upper Bound` = conf.high) %>%
+  gt() %>% 
+  tab_header(title = "Effect of Number of Tweets and Poll Quality on Reported Approval Rating",
+             subtitle = "Data from fivethirtyeight and Trump Tweet Archive")
 
 

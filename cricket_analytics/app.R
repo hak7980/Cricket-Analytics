@@ -5,6 +5,7 @@ library(stringr)
 library(lubridate)
 library(stringi)
 library(patchwork)
+library(broom)
 library(gganimate)
 library(gifski)
 library(skimr)
@@ -21,6 +22,12 @@ countries <- c("Choose one" = "", "Australia", "England","India", "Pakistan",
 years <- c("Choose one" = "", "2006", "2007", "2008",
            "2009", "2010", "2011", "2012", "2013", "2014",
            "2015", "2016", "2017")
+
+dependent <- c("Inning Runs" = "inning_runs", 
+               "Inning Wickets" = "inning_wickets")
+
+rule <- c("Powerplay Rule" = "pp_rule", "Newball Rule" = "nb_rule",
+          "Bouncer Rule" = "bo_rule", "Bat Thickness Rule" = "bt_rule")
 
 
 ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics", 
@@ -53,8 +60,8 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                               number of delivery whereas a bowler attempts to take as many wickets while conceeding
                               as little runs as possible."),
                                      h3("Detailed Explanation"),
-                                     HTML(paste("The following explanations are taken from",
-                                                a(href="http://www.abcofcricket.com", "abcofcricket.com:"))),
+                                     HTML(paste("The following explanation is taken from",
+                                                a(href="http://www.abcofcricket.com", "abcofcricket.com"))),
                                      mainPanel(align = "center",
                                                p("In a one-day match, each team bats only once and their
                                 innings are limited to a set number of overs, usually fifty,
@@ -82,7 +89,7 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                             tabPanel("Project Overview",
                                      br(),
 
-                                     p("Since 2011, ODI Cricket has changed drastically and
+                                     p("Since 2006, ODI Cricket has changed drastically and
                                         the rate of run-scoring has increased substantially.
                                         For instance, the records for the highest ODI total, 
                                         the fastest century and half-centuy scored by Batsmen, 
@@ -137,37 +144,68 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                           )),
                  
                  tabPanel("Visualizations",
-                          h4("The Evoloution of Run-Scoring in ODI Cricket"),
+                          h4("The Evoloution of ODI Cricket"),
                           tabsetPanel(
                             tabPanel("Overall Trends",
                                      h4("Evoloution of Run Scoring over Time"),
                                      plotOutput("plot"),
-                                     p("The graph above shows the trends in run-scoring between 2006-2020.")
+                                     p("The graph above shows the trends in run-scoring between 2006-2020."),
+                                     plotOutput("plot2"),
+                                     p("The graph above shows the trends in wicket-taking between 2006-2020.")
                             ),
                             tabPanel("Runs Scored in Phase",
-                                     selectInput("countryInput", "Country",
-                                                 choices=countries),
-                                     plotOutput("plot2"),
-                                     sidebarPanel(width=12, 
-                                       sliderInput("yearInput",
-                                                   label = "Year:",
-                                                   min = 2006, max = 2017,value=2006, sep="",ticks=FALSE))
-                                       ),
-                            
-                            tabPanel("Runs Scored by Position",
-                                     selectInput("countryInput2", "Country",
+                                     selectInput("countryInput3", "Country",
                                                  choices=countries),
                                      plotOutput("plot3"),
-                                     sidebarPanel(width=12,
-                                       sliderInput("yearInput2", 
+                                     sidebarPanel(width=12, 
+                                       sliderInput("yearInput3",
                                                    label = "Year:",
-                                                   min = 2006, max = 2017,value=2006,sep="", ticks=FALSE))                                       )
+                                                   min = 2006, max = 2017,value=2006, sep="",ticks=FALSE))),
+                            
+                            tabPanel("Runs Scored by Position",
+                                     selectInput("countryInput4", "Country",
+                                                 choices=countries),
+                                     plotOutput("plot4"),
+                                     sidebarPanel(width=12,
+                                       sliderInput("yearInput4", 
+                                                   label = "Year:",
+                                                   min = 2006, max = 2017,value=2006,sep="", ticks=FALSE))),
+                            
+                            tabPanel("Wickets Lost in Phase",
+                                     selectInput("countryInput5", "Country",
+                                                 choices=countries),
+                                     plotOutput("plot5"),
+                                     sidebarPanel(width=12, 
+                                                  sliderInput("yearInput5",
+                                                              label = "Year:",
+                                                              min = 2006, max = 2017,value=2006, sep="",ticks=FALSE))),
+                            
+                            tabPanel("Wickets Taken by Position",
+                                     selectInput("countryInput6", "Country",
+                                                 choices=countries),
+                                     plotOutput("plot6"),
+                                     sidebarPanel(width=12,
+                                                  sliderInput("yearInput6", 
+                                                              label = "Year:",
+                                                              min = 2006, max = 2017,value=2006,sep="", ticks=FALSE)))
+                            
+                            
                           )),
                  
                  tabPanel("Regression Results",
-                          fluidPage(
-                            h4("Have Rule Changes Transformed ODI Cricket?"),
-                          )),
+                            h3("Have Rule Changes Transformed ODI Cricket?"),
+                          h5("Simple Correlational Model"),
+                          sidebarLayout(
+                            sidebarPanel(
+                              selectInput("depInput", "Dependent Variable",
+                                        choices=dependent),
+                              selectInput("ruleInput", "Rule",
+                                          choices=rule)),
+                            mainPanel(
+                              tableOutput("regression")
+                              ))
+                          
+                          ),
                  
                  tabPanel("Background",
                           h3("Motivation"),
@@ -184,7 +222,9 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                           h3("About Me"),
                           p("My name is Hamid Khan and I am currently a Junior at Harvard College studying Economics with a minor in Statistics. 
                             You can reach me at hamidkhan@college.harvard.edu for any questions about this project.")))
-
+ 
+# Detailed comments on the code for the plots can
+# be found in the plot_code Rscript file in the repo
 
 server <- function(input, output) {
   
@@ -211,13 +251,34 @@ server <- function(input, output) {
               axis.text.x = element_text(angle = 45, hjust = 1))
     })
   
-  output$plot2 <-renderPlot({
+  output$plot2 <-
+    renderPlot({
+      data %>%
+        group_by(year) %>%
+        summarize(inning_wickets = mean(inning_wickets)) %>%
+        ungroup() %>%
+        ggplot(aes(x = factor(year), 
+                   y = inning_wickets)) +
+        geom_point() +
+        labs(title = 
+               "Average Wickets Taken in Each Phase", 
+             subtitle = "Period: 2010-2017",
+             x = "Year", 
+             y = "Average Wickets",
+             col = "Innings Phase") +
+        labs(caption = "Source: cricsheet.org") +
+        theme_classic()+ 
+        theme(legend.position = "right",
+              axis.text.x = element_text(angle = 45, hjust = 1))
+    })
+  
+  output$plot3 <-renderPlot({
     data %>%
-      filter(team == input$countryInput) %>%
+      filter(team == input$countryInput3) %>%
       group_by(year, phase) %>%
       summarize(phase_runs = mean(phase_runs)) %>%
       ungroup() %>%
-      filter(year == input$yearInput) %>%
+      filter(year == input$yearInput3) %>%
       ggplot(aes(phase, phase_runs)) +
       geom_col() +
       labs(title = 
@@ -232,14 +293,14 @@ server <- function(input, output) {
     
   })
   
-  output$plot3 <-
+  output$plot4 <-
     renderPlot({
       data %>%
-        filter(team == input$countryInput2) %>%
+        filter(team == input$countryInput4) %>%
         group_by(year, bat_pos) %>%
         summarize(pos_runs = mean(pos_runs)) %>%
         ungroup() %>%
-        filter(year == input$yearInput2) %>%
+        filter(year == input$yearInput4) %>%
         ggplot(aes(bat_pos, pos_runs)) +
         geom_col() +
         labs(title =
@@ -252,19 +313,71 @@ server <- function(input, output) {
         theme(legend.position = "right")
     })
   
+  output$plot5 <-renderPlot({
+    data %>%
+      filter(team == input$countryInput5) %>%
+      group_by(year, phase) %>%
+      summarize(phase_wickets = mean(phase_wickets)) %>%
+      ungroup() %>%
+      filter(year == input$yearInput5) %>%
+      ggplot(aes(phase, phase_wickets)) +
+      geom_col() +
+      labs(title = 
+             "Average Wickets Lost in a Phase", 
+           subtitle = "Period: 2010-2017",
+           x = "Phase", 
+           y = "Average Wickets Lost") +
+      labs(caption = "Source: cricsheet.org") +
+      theme_classic()+ 
+      theme(legend.position = "right",
+            axis.text.x = element_text(angle = 45, hjust = 1))
+    
+  })
+  
+  output$plot6 <-
+    renderPlot({
+      data %>%
+        filter(team == input$countryInput6) %>%
+        group_by(year, bow_pos) %>%
+        summarize(pos_wickets = mean(pos_wickets)) %>%
+        ungroup() %>%
+        filter(year == input$yearInput6) %>%
+        ggplot(aes(bow_pos, pos_wickets)) +
+        geom_col() +
+        labs(title =
+               "Average Wickets Taken by Bowler",
+             subtitle = "Period: 2010-2017",
+             x = "Bowling Position",
+             y = "Average Wickets in the Year") +
+        labs(caption = "Source: cricsheet.org") +
+        theme_classic()+
+        theme(legend.position = "right")
+    })
+  
+  # Summary stats of all numeric variables in the dataset
   output$sumstats <- 
     renderTable(
-      data %>% skim(pos_runs, inning_runs, inning_wickets, phase_runs)
+      data %>%
+        select_if(.,is.numeric) %>%
+        skim() 
     )
   
-  output$picture <-
-    renderText({
-      c(
-        '<img src="',
-        "https://images.news18.com/ibnlive/uploads/1200x800/jpg/2018/01/DUvqSCdUMAA7Va7.jpg?impolicy=website&width=1200&height=800",
-        '">'
-      )})
+ # Function that saves regression variable inputs 
+  myformula <- reactive({
+    expln <- paste(c(input$ruleInput))
+    as.formula(paste(input$depInput, " ~ ", expln))
+  })
   
+  # Making the output plot
+  output$regression <-
+    renderTable(
+      lm(myformula(), data = data) %>%
+        tidy(conf.int=TRUE) %>% 
+        select(Variable = term,
+               Estimate = estimate,
+               `Lower Bound` = conf.low,
+               `Upper Bound` = conf.high))
+
 }
 
 shinyApp(ui = ui, server = server)
