@@ -15,7 +15,8 @@ library(vembedr)
 
 countries <- c("Choose one" = "", "Australia", "England","India", "Pakistan",
                "New Zealand", "Sri Lanka", "South Africa",
-               "Zimbabwe", "Bangladesh")
+               "Zimbabwe", "Bangladesh", "Afghanistan", "Ireland", 
+               "Canada", "Kenya", "Scotland")
 
 years <- c("Choose one" = "", "2006", "2007", "2008",
            "2009", "2010", "2011", "2012", "2013", "2014",
@@ -138,44 +139,51 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                  tabPanel("Visualizations",
                           h4("The Evoloution of Run-Scoring in ODI Cricket"),
                           tabsetPanel(
-                            tabPanel("Run-Scoring Trends",
+                            tabPanel("Overall Trends",
                                      h4("Evoloution of Run Scoring over Time"),
                                      plotOutput("plot"),
                                      p("The graph above shows the trends in run-scoring between 2006-2020.")
                             ),
                             tabPanel("Runs Scored in Phase",
-                                     sidebarLayout(sidebarPanel(
-                                       selectInput("countryInput", "Country",         
-                                                   choices = countries)),
-                                       mainPanel(plotOutput("plot2")))),
+                                     selectInput("countryInput", "Country",
+                                                 choices=countries),
+                                     plotOutput("plot2"),
+                                     sidebarPanel(width=12, 
+                                       sliderInput("yearInput",
+                                                   label = "Year:",
+                                                   min = 2006, max = 2017,value=2006, sep="",ticks=FALSE))
+                                       ),
                             
                             tabPanel("Runs Scored by Position",
-                                     sidebarLayout(sidebarPanel(
-                                       selectInput("yearInput", "Year",         
-                                                   choices = years)),
-                                       mainPanel(plotOutput("plot3"))))
+                                     selectInput("countryInput2", "Country",
+                                                 choices=countries),
+                                     plotOutput("plot3"),
+                                     sidebarPanel(width=12,
+                                       sliderInput("yearInput2", 
+                                                   label = "Year:",
+                                                   min = 2006, max = 2017,value=2006,sep="", ticks=FALSE))                                       )
                           )),
                  
                  tabPanel("Regression Results",
                           fluidPage(
-                            h4("Evoloution of Run Scoring over Time"),
+                            h4("Have Rule Changes Transformed ODI Cricket?"),
                           )),
                  
                  tabPanel("Background",
                           h3("Motivation"),
-                          p("Hello! Welcome to my final project for GOV - 1005, 
-                            where I analyze granular data on over a thousand cricket 
-                            matches to glean interesting insights about the leading 
-                            cricketers and their teams.
-                                
-                            I chose to focus my analysis on cricket because I am 
+                          p("Hello!
+                          I hope you enjoyed this final project done for my course, GOV - 1005 taught by Dr. David Kane."), 
+
+                            p("I chose to focus my analysis on cricket because I am 
                             from Pakistan and have been an avid follower of the sport
                             for over a decade. In college, I find it hard to follow 
                             the game as much as I would like to, so this project is 
                             a way for me to further explore and contribute to 
                             cricket, a sport that is an important part of my life."),
                           
-                          h3("About Me")))
+                          h3("About Me"),
+                          p("My name is Hamid Khan and I am currently a Junior at Harvard College studying Economics with a minor in Statistics. 
+                            You can reach me at hamidkhan@college.harvard.edu for any questions about this project.")))
 
 
 server <- function(input, output) {
@@ -204,39 +212,34 @@ server <- function(input, output) {
     })
   
   output$plot2 <-renderPlot({
-    p1 <- data %>%
-      filter(phase=="First Ten") %>%
-      group_by(bracket, year) %>%
-      mutate(win = ifelse(winner==input$countryInput,1,0)) %>%
-      mutate(prop_won = sum(win)/n()) %>%
+    data %>%
+      filter(team == input$countryInput) %>%
+      group_by(year, phase) %>%
+      summarize(phase_runs = mean(phase_runs)) %>%
       ungroup() %>%
-      ggplot() + geom_point(aes(x = factor(year), 
-                                group = factor(bracket),                                
-                                color = factor(bracket), y = prop_won), 
-                            size=2) +            
-      labs(title = "Proportion of Matches won Sorted by Runs Scored in the \n First Ten Overs", subtitle = "Sorted According to Run Bracket - Period: 2010-2017",   x = "Year", y = "Proportion Won", col = "Runs Scored Bracket") +  labs(caption = "Source: cricsheet.org") + theme_classic()+  theme(legend.position = "right", axis.text.x = element_text(angle = 45, hjust = 1))
+      filter(year == input$yearInput) %>%
+      ggplot(aes(phase, phase_runs)) +
+      geom_col() +
+      labs(title = 
+             "Average Runs Scored in a Phase", 
+           subtitle = "Period: 2010-2017",
+           x = "Phase", 
+           y = "Average Runs Scored") +
+      labs(caption = "Source: cricsheet.org") +
+      theme_classic()+ 
+      theme(legend.position = "right",
+            axis.text.x = element_text(angle = 45, hjust = 1))
     
-    p2 <- data %>%
-      filter(phase=="Last Ten") %>%
-      group_by(bracket, year) %>%
-      mutate(win = ifelse(winner==input$countryInput,1,0)) %>%
-      mutate(prop_won = sum(win)/n()) %>%
-      ungroup() %>%
-      ggplot() + geom_point(aes(x = factor(year), 
-                                group = factor(bracket),                                
-                                color = factor(bracket), y = prop_won), 
-                            size=2) +            
-      labs(title = "Proportion of Matches won Sorted by Runs Scored in the \n Last Ten Overs", subtitle = "Sorted According to Run Bracket - Period: 2010-2017",   x = "Year", y = "Proportion Won", col = "Runs Scored Bracket") +  labs(caption = "Source: cricsheet.org") + theme_classic()+  theme(legend.position = "right", axis.text.x = element_text(angle = 45, hjust = 1))
-    p1+p2+plot_layout(ncol=1)
   })
   
   output$plot3 <-
     renderPlot({
       data %>%
+        filter(team == input$countryInput2) %>%
         group_by(year, bat_pos) %>%
         summarize(pos_runs = mean(pos_runs)) %>%
         ungroup() %>%
-        filter(year == input$yearInput) %>%
+        filter(year == input$yearInput2) %>%
         ggplot(aes(bat_pos, pos_runs)) +
         geom_col() +
         labs(title =
@@ -246,8 +249,7 @@ server <- function(input, output) {
              y = "Average Runs in the Year") +
         labs(caption = "Source: cricsheet.org") +
         theme_classic()+
-        theme(legend.position = "right",
-              axis.text.x = element_text(angle = 45, hjust = 1))
+        theme(legend.position = "right")
     })
   
   output$sumstats <- 

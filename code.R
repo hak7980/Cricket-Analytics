@@ -54,7 +54,7 @@ data <- subset %>%
   mutate(inning_runs = sum(totalRuns),
          inning_wickets = sum(wicket)) %>%
   ungroup() %>%
-  group_by(phase, column_label) %>%
+  group_by(phase, column_label, team) %>%
   mutate(phase_runs = sum(totalRuns),
          phase_wickets = sum(wicket)) %>%
   ungroup() %>%
@@ -70,12 +70,14 @@ data <- subset %>%
   mutate(average_runs = mean(phase_runs)) %>%
   ungroup()
 
+# Making phase a factor variable
+
+data$phase <- ordered(data$phase, levels = c("First Ten", "Middle One", "Middle Two", "Middle Three", "Last Ten"))
+
 # Making summary stats table
-x <- data %>% gtsummary(pos_runs, inning_runs, inning_wickets, phase_runs)
+x <- data %>% skim(pos_runs, inning_runs, inning_wickets, phase_runs)
 
 save(data, file = "cricket_analytics/data/data.RData")
-
-?gtsummary
 
 # Making plot of the proportion of matches won by Pakistan within each run bracket sorted
 # accordingto the year the match was played 
@@ -147,6 +149,32 @@ p3 <-
        subtitle = "Period: 2010-2017",
        x = "Batting Position", 
        y = "Average Runs in the Year") +
+  labs(caption = "Source: cricsheet.org") +
+  theme_classic()+ 
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+p4 <- data %>%
+  filter(phase=="First Ten") %>%
+  mutate(win = ifelse(winner=="Pakistan",1,0)) %>%
+  mutate(prop_won = sum(win)/n()) %>%
+  ggplot(aes(x = average_runs, y = prop_won)) +
+  geom_point() +
+  stat_smooth()
+
+p5 <- 
+data %>%
+  group_by(year, bat_pos) %>%
+  summarize(phase_runs = mean(phase_runs)) %>%
+  ungroup() %>%
+  filter(year == 2017) %>%
+  ggplot(aes(phase, phase_runs)) +
+  geom_col() +
+  labs(title = 
+         "Average Runs Scored in a Phase", 
+       subtitle = "Period: 2010-2017",
+       x = "Phase", 
+       y = "Average Runs Scored") +
   labs(caption = "Source: cricsheet.org") +
   theme_classic()+ 
   theme(legend.position = "right",
