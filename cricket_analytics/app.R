@@ -58,9 +58,9 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                               number of delivery whereas a bowler attempts to take as many wickets while conceeding
                               as little runs as possible."),
                                      h3("Detailed Explanation"),
-                                     HTML(paste("The following explanation is taken from",
-                                                a(href="http://www.abcofcricket.com", "abcofcricket.com"))),
-                                     mainPanel(align = "center",
+                                           mainPanel(align = "center",
+                                                     HTML(paste("The following explanation is taken from",
+                                                                a(href="http://www.abcofcricket.com", "abcofcricket.com"))),
                                                p("In a one-day match, each team bats only once and their
                                 innings are limited to a set number of overs, usually fifty,
                                 however, this can vary as a result of poor weather etc."),
@@ -341,7 +341,7 @@ server <- function(input, output) {
       geom_col() +
       labs(title = 
              "Average Runs Scored in a Phase", 
-           subtitle = "Period: 2010-2017",
+           subtitle = (paste("Year", input$yearInput3, sep = ": ")),
            x = "Phase", 
            y = "Average Runs Scored") +
       labs(caption = "Source: cricsheet.org") +
@@ -363,7 +363,7 @@ server <- function(input, output) {
         geom_col() +
         labs(title =
                "Average Runs Scored by Batsmen",
-             subtitle = "Period: 2010-2017",
+             subtitle = (paste("Year", input$yearInput4, sep = ": ")),
              x = "Batting Position",
              y = "Average Runs in the Year") +
         labs(caption = "Source: cricsheet.org") +
@@ -382,7 +382,7 @@ server <- function(input, output) {
       geom_col() +
       labs(title = 
              "Average Wickets Lost in a Phase", 
-           subtitle = "Period: 2010-2017",
+           subtitle = (paste("Year", input$yearInput5, sep = ": ")),
            x = "Phase", 
            y = "Average Wickets Lost") +
       labs(caption = "Source: cricsheet.org") +
@@ -404,7 +404,7 @@ server <- function(input, output) {
         geom_col() +
         labs(title =
                "Average Wickets Taken by Bowler",
-             subtitle = "Period: 2010-2017",
+             subtitle = (paste("Year", input$yearInput6, sep = ": ")),
              x = "Bowling Position",
              y = "Average Wickets in the Year") +
         labs(caption = "Source: cricsheet.org") +
