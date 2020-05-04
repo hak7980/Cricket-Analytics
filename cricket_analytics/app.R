@@ -189,9 +189,9 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                             tabPanel("Overall Trends",
                                      h4("Evoloution of Run Scoring over Time"),
                                      plotOutput("plot"),
-                                     p("The graph above shows the trends in run-scoring between 2006-2017."),
+                                     p("The graph above shows the trends in run-scoring between 2006-2020."),
                                      plotOutput("plot2"),
-                                     p("The graph above shows the trends in wicket-taking between 2006-2017.")
+                                     p("The graph above shows the trends in wicket-taking between 2006-2020.")
                             ),
                             tabPanel("Runs Scored in Phase",
                                      selectInput("countryInput3", "Country",
@@ -307,7 +307,7 @@ server <- function(input, output) {
         geom_point() +
         labs(title = 
                "Average Runs Scored in Each Phase", 
-             subtitle = "Period: 2010-2017",
+             subtitle = "Period: 2006-2020",
              x = "Year", 
              y = "Average Runs",
              col = "Innings Phase") +
@@ -328,7 +328,7 @@ server <- function(input, output) {
         geom_point() +
         labs(title = 
                "Average Wickets Taken in Each Phase", 
-             subtitle = "Period: 2010-2017",
+             subtitle = "Period: 2006-2020",
              x = "Year", 
              y = "Average Wickets",
              col = "Innings Phase") +

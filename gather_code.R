@@ -29,9 +29,6 @@ lapply(files, function(x) {
   
 })
 
-```
-
-```{r converting ODI, eval=FALSE, include=FALSE}
 
 # Storing all the ODI files as a list in the 
 # raw-data files 
@@ -82,10 +79,6 @@ results <- bind_rows(results, .id = "column_label")
 
 save(results, file =  "raw-data/t20metadata.RData")
 
-```
-
-```{r creating ODI meta file, include=FALSE}
-
 
 # Storing the dir of the ODI RData files as path
 # and then as a list called files
@@ -111,4 +104,3 @@ results <- bind_rows(results, .id = "column_label")
 
 save(results, file =  "raw-data/odimetadata.RData")
 
-```
