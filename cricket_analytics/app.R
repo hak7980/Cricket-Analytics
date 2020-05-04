@@ -21,7 +21,8 @@ countries <- c("Choose one" = "", "Australia", "England","India", "Pakistan",
 
 years <- c("Choose one" = "", "2006", "2007", "2008",
            "2009", "2010", "2011", "2012", "2013", "2014",
-           "2015", "2016", "2017")
+           "2015", "2016", "2017", "2018", "2019",
+           "2020")
 
 dependent <- c("Inning Runs" = "inning_runs", 
                "Inning Wickets" = "inning_wickets")
@@ -200,7 +201,7 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                      sidebarPanel(width=12, 
                                        sliderInput("yearInput3",
                                                    label = "Year:",
-                                                   min = 2006, max = 2017,value=2006, sep="",ticks=FALSE)),
+                                                   min = 2006, max = 2020,value=2006, sep="",ticks=FALSE)),
                                      p("This plot shows how the number of runs scored by
                                       a team in each phase (10-over chunk) has
                                        changed over time. The data can be viewed at the
@@ -213,7 +214,7 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                      sidebarPanel(width=12,
                                        sliderInput("yearInput4", 
                                                    label = "Year:",
-                                                   min = 2006, max = 2017,value=2006,sep="", ticks=FALSE)),
+                                                   min = 2006, max = 2020,value=2006,sep="", ticks=FALSE)),
                                      p("This plot shows how the runs scored by
                                        batsmen batting at a particular position have
                                        changed over time. The data can be viewed at the
@@ -226,7 +227,7 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                      sidebarPanel(width=12, 
                                                   sliderInput("yearInput5",
                                                               label = "Year:",
-                                                              min = 2006, max = 2017,value=2006, sep="",ticks=FALSE)),
+                                                              min = 2006, max = 2020,value=2006, sep="",ticks=FALSE)),
                                      p("This plot shows how the number of wickets lost by
                                       a team in each phase (10-over chunk) has
                                        changed over time. The data can be viewed at the
@@ -239,7 +240,7 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                      sidebarPanel(width=12,
                                                   sliderInput("yearInput6", 
                                                               label = "Year:",
-                                                              min = 2006, max = 2017,value=2006,sep="", ticks=FALSE)),
+                                                              min = 2006, max = 2020,value=2006,sep="", ticks=FALSE)),
                                      p("This plot shows how the number of wickets taken
                                        by a bowler bowling at a particular position has
                                        changed over time. The data can be viewed at the
