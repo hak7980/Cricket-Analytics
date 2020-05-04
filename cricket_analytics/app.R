@@ -259,7 +259,14 @@ ui <- navbarPage(theme = shinytheme("simplex"), "Cricket Analytics",
                                           choices=rule)),
                             mainPanel(
                               tableOutput("regression")
-                              ))
+                              )),
+                          p("The dependent variable in the regression is
+                            an indicator variable for whether the rule was 
+                            in play or not. Therefore, the variable takes 
+                            a value of 0 if the rule was not institued at the
+                            time of the game and 1 if the rule was in place. The
+                            independent variable, thereofore, measures the association
+                            between the rule and the dependent variable.")
                           
                           ),
                  
